@@ -9,7 +9,7 @@ export default function LetterboxdGroupStats() {
   const [error, setError] = useState('');
 
   // Change this to your Flask backend URL when deployed
-  const API_URL = 'http://127.0.0.1:5000/';
+  const API_URL = 'http://127.0.0.1:8000';
 
   const addUsername = () => {
     if (currentInput.trim() && !usernames.includes(currentInput.trim())) {
@@ -24,7 +24,7 @@ export default function LetterboxdGroupStats() {
     setStats(null);
   };
 
-  const analyzeGroup = async () => {
+  const analyzeGroup = async (withEnrichment = false) => {
     if (usernames.length < 2) {
       setError('Please add at least 2 usernames');
       return;
@@ -40,7 +40,10 @@ export default function LetterboxdGroupStats() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ usernames }),
+        body: JSON.stringify({ 
+          usernames,
+          enrich: withEnrichment  // Request ML features
+        }),
       });
 
       if (!response.ok) {
@@ -116,9 +119,9 @@ export default function LetterboxdGroupStats() {
           </div>
 
           <button
-            onClick={analyzeGroup}
+            onClick={() => analyzeGroup(false)}
             disabled={loading || usernames.length < 2}
-            className="w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-bold text-lg transition flex items-center justify-center gap-2 shadow-lg"
+            className="w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-bold text-lg transition flex items-center justify-center gap-2 shadow-lg mb-3"
           >
             {loading ? (
               <>
@@ -128,10 +131,32 @@ export default function LetterboxdGroupStats() {
             ) : (
               <>
                 <Search className="w-5 h-5" />
-                Analyze Group
+                Quick Analysis (No ML)
               </>
             )}
           </button>
+
+          <button
+            onClick={() => analyzeGroup(true)}
+            disabled={loading || usernames.length < 2}
+            className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-bold text-lg transition flex items-center justify-center gap-2 shadow-lg"
+          >
+            {loading ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                Analyzing with ML...
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-5 h-5" />
+                Deep Analysis (With ML)
+              </>
+            )}
+          </button>
+
+          <p className="text-indigo-200 text-sm mt-2 text-center">
+            💡 Deep Analysis includes genre/director data and AI predictions (slower but more insights!)
+          </p>
 
           {error && (
             <div className="mt-4 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-200 flex items-start gap-2">
@@ -180,7 +205,7 @@ export default function LetterboxdGroupStats() {
                   Films Watched by Everyone ({stats.shared_films.length})
                 </h3>
                 <div className="space-y-3">
-                  {stats.shared_films.slice(0, 10).map((film, i) => (
+                  {stats.shared_films.map((film, i) => (
                     <div key={i} className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition">
                       <div className="flex justify-between items-start">
                         <div>
@@ -268,6 +293,7 @@ export default function LetterboxdGroupStats() {
                 </div>
               </div>
             )}
+
 
             {/* ML INSIGHTS SECTION */}
             {stats.ml_insights && (
